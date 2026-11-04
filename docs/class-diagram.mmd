@@ -1,0 +1,35 @@
+
+classDiagram
+    class Main {
+        -Scanner scanner
+        -StudentRegisterService service
+        +main(String[] args) void
+    }
+
+    class StudentRegisterService {
+        -ArrayList~Student~ students
+        +addStudent(Student student) boolean
+        +getAllStudents() ArrayList~Student~
+        +searchStudent(String id) Student
+        +deleteStudent(String id) boolean
+        +showSummary() int
+        +countCourse(String course) int
+        -findStudentIndex(String id) int
+    }
+
+    class Student {
+        -String id
+        -String name
+        -String course
+        +Student(String id, String name, String course)
+        +getId() String
+        +setId(String id) void
+        +getName() String
+        +setName(String name) void
+        +getCourse() String
+        +setCourse(String course) void
+        +toString() String
+    }
+
+    Main ..> StudentRegisterService : uses
+    StudentRegisterService "1" o-- "0..*" Student : manages
