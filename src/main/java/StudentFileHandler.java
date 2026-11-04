@@ -19,6 +19,7 @@ public class StudentFileHandler {
     }
 
     // Saves all student records safely to CSV
+    // Saves all student records safely to CSV
     public void saveStudents(List<Student> students) throws IOException {
 
         Path parent = filePath.getParent();
@@ -26,35 +27,43 @@ public class StudentFileHandler {
 
         Files.createDirectories(parent);
 
-        try (BufferedWriter writer = Files.newBufferedWriter(
-                tempFile, StandardCharsets.UTF_8)) {
-
-            writer.write("id,name,course");
-            writer.newLine();
-
-            for (Student student : students) {
-                writer.write(escapeCsv(student.getId()));
-                writer.write(",");
-                writer.write(escapeCsv(student.getName()));
-                writer.write(",");
-                writer.write(escapeCsv(student.getCourse()));
-                writer.newLine();
-            }
-        }
-
         try {
-            Files.move(
-                    tempFile,
-                    filePath,
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE
-            );
-        } catch (AtomicMoveNotSupportedException e) {
-            Files.move(
-                    tempFile,
-                    filePath,
-                    StandardCopyOption.REPLACE_EXISTING
-            );
+            // Write to a temporary file first
+            try (BufferedWriter writer = Files.newBufferedWriter(
+                    tempFile, StandardCharsets.UTF_8)) {
+
+                writer.write("id,name,course");
+                writer.newLine();
+
+                for (Student student : students) {
+                    writer.write(escapeCsv(student.getId()));
+                    writer.write(",");
+                    writer.write(escapeCsv(student.getName()));
+                    writer.write(",");
+                    writer.write(escapeCsv(student.getCourse()));
+                    writer.newLine();
+                }
+            }
+
+            // Replace original file after writing succeeds
+            try {
+                Files.move(
+                        tempFile,
+                        filePath,
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE
+                );
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(
+                        tempFile,
+                        filePath,
+                        StandardCopyOption.REPLACE_EXISTING
+                );
+            }
+
+        } finally {
+            // Remove temporary file if it still exists
+            Files.deleteIfExists(tempFile);
         }
     }
 
@@ -115,7 +124,7 @@ public class StudentFileHandler {
                     skippedRecords++;
                     System.out.println(
                             "Warning: Invalid CSV record at line "
-                                    + lineNumber + " was skipped."
+                            + lineNumber + " was skipped."
                     );
                 }
             }
