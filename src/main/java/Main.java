@@ -86,13 +86,26 @@ public class Main {
     }
 
     // Reads the user's menu choice
+    // Reads a valid menu choice
     private static int readChoice() {
-        String input = scanner.nextLine().trim();
 
-        try {
-            return Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            return -1;
+        while (true) {
+
+            String input = scanner.nextLine().trim();
+
+            try {
+                int choice = Integer.parseInt(input);
+
+                if (choice >= 0 && choice <= 5) {
+                    return choice;
+                }
+
+            } catch (NumberFormatException e) {
+                // Display validation message below
+            }
+
+            System.out.print(
+                    "Invalid choice. Enter a number from 0 to 5: ");
         }
     }
 
@@ -109,34 +122,52 @@ public class Main {
         }
     }
 
+    // Reads input and repeatedly asks until a non-empty value is entered
+    private static String readRequiredInput(String message) {
+
+        while (true) {
+            System.out.print(message);
+            String input = scanner.nextLine().trim();
+
+            if (!input.isEmpty()) {
+                return input;
+            }
+
+            System.out.println("Input cannot be empty. Please try again.");
+        }
+    }
+
+    // Collects student details and adds a record
+    // Collects student details and adds a record
     // Collects student details and adds a record
     private static void handleAddStudent() {
 
-        System.out.print("Enter student ID: ");
-        String id = scanner.nextLine().trim();
+        while (true) {
 
-        System.out.print("Enter student name: ");
-        String name = scanner.nextLine().trim();
+            String id = readRequiredInput("Enter student ID: ");
+            String name = readRequiredInput("Enter student name: ");
+            String course = readRequiredInput("Enter course: ");
 
-        System.out.print("Enter course: ");
-        String course = scanner.nextLine().trim();
+            Student student = new Student(id, name, course);
 
-        Student student = new Student(id, name, course);
+            try {
+                service.addStudent(student);
 
-        if (service.addStudent(student)) {
+                if (saveRecords()) {
+                    System.out.println("Record added successfully!");
+                } else {
+                    service.deleteStudent(id);
+                    System.out.println(
+                            "Record was not added because saving failed.");
+                }
 
-            if (saveRecords()) {
-                System.out.println("Record added successfully!");
-            } else {
-                // Roll back the addition if saving fails
-                service.deleteStudent(id);
+                return;
+
+            } catch (InvalidStudentDataException e) {
                 System.out.println(
-                        "Record was not added because saving failed.");
+                        "Invalid student data: " + e.getMessage());
+                System.out.println("Please enter the student details again.\n");
             }
-
-        } else {
-            System.out.println(
-                    "Could not add record. Check the details and ensure the ID is unique.");
         }
     }
 
@@ -167,8 +198,7 @@ public class Main {
 
     // Searches for a student using their ID
     private static void handleSearchStudent() {
-        System.out.print("Enter student ID to search: ");
-        String id = scanner.nextLine().trim();
+        String id = readRequiredInput("Enter student ID to search: ");
 
         if (id.isEmpty()) {
             System.out.println("Student ID cannot be empty.");
@@ -186,9 +216,9 @@ public class Main {
     }
 
     // Deletes a student using their ID
+    // Deletes a student using their ID
     private static void handleDeleteStudent() {
-        System.out.print("Enter student ID to delete: ");
-        String id = scanner.nextLine().trim();
+        String id = readRequiredInput("Enter student ID to delete: ");
 
         if (id.isEmpty()) {
             System.out.println("Student ID cannot be empty.");
@@ -208,10 +238,16 @@ public class Main {
                 System.out.println("Record deleted successfully!");
             } else {
                 // Restore the record if saving fails
-                service.addStudent(student);
-                System.out.println(
-                        "Deletion cancelled because saving failed.");
+                try {
+                    service.addStudent(student);
+                    System.out.println(
+                            "Deletion cancelled because saving failed.");
+                } catch (InvalidStudentDataException e) {
+                    System.out.println(
+                            "Could not restore student: " + e.getMessage());
+                }
             }
         }
     }
+
 }

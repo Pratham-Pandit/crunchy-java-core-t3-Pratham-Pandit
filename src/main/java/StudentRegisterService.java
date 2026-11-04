@@ -7,19 +7,36 @@ public class StudentRegisterService {
     private final ArrayList<Student> students = new ArrayList<>();
 
     // Adds a student if the ID is valid and not already registered
-    public boolean addStudent(Student student) {
-        if (student == null
-                || student.getId() == null
-                || student.getId().trim().isEmpty()
-                || student.getName() == null
-                || student.getName().trim().isEmpty()
-                || student.getCourse() == null
+    // Adds a student after validating the details
+    public boolean addStudent(Student student)
+            throws InvalidStudentDataException {
+
+        if (student == null) {
+            throw new InvalidStudentDataException(
+                    "Student details cannot be null.");
+        }
+
+        if (student.getId() == null
+                || student.getId().trim().isEmpty()) {
+            throw new InvalidStudentDataException(
+                    "Student ID cannot be empty.");
+        }
+
+        if (student.getName() == null
+                || student.getName().trim().isEmpty()) {
+            throw new InvalidStudentDataException(
+                    "Student name cannot be empty.");
+        }
+
+        if (student.getCourse() == null
                 || student.getCourse().trim().isEmpty()) {
-            return false;
+            throw new InvalidStudentDataException(
+                    "Course cannot be empty.");
         }
 
         if (findStudentIndex(student.getId()) != -1) {
-            return false;
+            throw new InvalidStudentDataException(
+                    "A student with this ID already exists.");
         }
 
         students.add(student);
