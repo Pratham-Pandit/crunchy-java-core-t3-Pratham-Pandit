@@ -19,7 +19,6 @@ public class StudentFileHandler {
     }
 
     // Saves all student records safely to CSV
-    // Saves all student records safely to CSV
     public void saveStudents(List<Student> students) throws IOException {
 
         Path parent = filePath.getParent();
@@ -61,10 +60,20 @@ public class StudentFileHandler {
                 );
             }
 
-        } finally {
-            // Remove temporary file if it still exists
-            Files.deleteIfExists(tempFile);
+        } catch (IOException | RuntimeException e) {
+
+            // Preserve the original error if cleanup also fails
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (IOException cleanupError) {
+                e.addSuppressed(cleanupError);
+            }
+
+            throw e;
         }
+
+        // Remove any remaining temporary file after success
+        Files.deleteIfExists(tempFile);
     }
 
     // Loads student records from CSV
@@ -122,6 +131,7 @@ public class StudentFileHandler {
 
                 } catch (IllegalArgumentException e) {
                     skippedRecords++;
+
                     System.out.println(
                             "Warning: Invalid CSV record at line "
                             + lineNumber + " was skipped."
@@ -149,31 +159,62 @@ public class StudentFileHandler {
         return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 
-    // Parses a CSV line while supporting quoted commas and quotes
+    // Parses a single-line CSV record
     private List<String> parseCsvLine(String line) {
 
         List<String> fields = new ArrayList<>();
         StringBuilder field = new StringBuilder();
 
         boolean insideQuotes = false;
+        boolean closedQuotes = false;
 
         for (int i = 0; i < line.length(); i++) {
 
             char current = line.charAt(i);
 
-            if (current == '"') {
+            if (insideQuotes) {
 
-                if (insideQuotes && i + 1 < line.length()
-                        && line.charAt(i + 1) == '"') {
+                if (current == '"') {
 
-                    field.append('"');
-                    i++;
+                    if (i + 1 < line.length()
+                            && line.charAt(i + 1) == '"') {
+
+                        field.append('"');
+                        i++;
+
+                    } else {
+                        insideQuotes = false;
+                        closedQuotes = true;
+                    }
 
                 } else {
-                    insideQuotes = !insideQuotes;
+                    field.append(current);
                 }
 
-            } else if (current == ',' && !insideQuotes) {
+            } else if (closedQuotes) {
+
+                if (current == ',') {
+                    fields.add(field.toString());
+                    field.setLength(0);
+                    closedQuotes = false;
+
+                } else {
+                    throw new IllegalArgumentException(
+                            "Unexpected character after quoted field."
+                    );
+                }
+
+            } else if (current == '"') {
+
+                if (field.length() != 0) {
+                    throw new IllegalArgumentException(
+                            "Unexpected quotation mark."
+                    );
+                }
+
+                insideQuotes = true;
+
+            } else if (current == ',') {
 
                 fields.add(field.toString());
                 field.setLength(0);
@@ -184,7 +225,9 @@ public class StudentFileHandler {
         }
 
         if (insideQuotes) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(
+                    "Unclosed quotation mark."
+            );
         }
 
         fields.add(field.toString());
