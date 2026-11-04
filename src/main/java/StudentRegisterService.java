@@ -6,7 +6,6 @@ public class StudentRegisterService {
 
     private final ArrayList<Student> students = new ArrayList<>();
 
-    // Adds a student if the ID is valid and not already registered
     // Adds a student after validating the details
     public boolean addStudent(Student student)
             throws InvalidStudentDataException {
@@ -17,19 +16,19 @@ public class StudentRegisterService {
         }
 
         if (student.getId() == null
-                || student.getId().trim().isEmpty()) {
+                || student.getId().isBlank()) {
             throw new InvalidStudentDataException(
                     "Student ID cannot be empty.");
         }
 
         if (student.getName() == null
-                || student.getName().trim().isEmpty()) {
+                || student.getName().isBlank()) {
             throw new InvalidStudentDataException(
                     "Student name cannot be empty.");
         }
 
         if (student.getCourse() == null
-                || student.getCourse().trim().isEmpty()) {
+                || student.getCourse().isBlank()) {
             throw new InvalidStudentDataException(
                     "Course cannot be empty.");
         }
@@ -43,10 +42,45 @@ public class StudentRegisterService {
         return true;
     }
 
-    // Loads records into the service
+    // Loads validated records into the service
     public void loadStudents(List<Student> loadedStudents) {
+
+        if (loadedStudents == null) {
+            throw new IllegalArgumentException(
+                    "Student list cannot be null.");
+        }
+
+        ArrayList<Student> validatedStudents = new ArrayList<>();
+
+        for (Student student : loadedStudents) {
+
+            if (student == null
+                    || student.getId() == null
+                    || student.getId().isBlank()
+                    || student.getName() == null
+                    || student.getName().isBlank()
+                    || student.getCourse() == null
+                    || student.getCourse().isBlank()) {
+
+                throw new IllegalArgumentException(
+                        "Loaded student data contains invalid records.");
+            }
+
+            for (Student existing : validatedStudents) {
+                if (existing.getId().equalsIgnoreCase(
+                        student.getId().trim())) {
+
+                    throw new IllegalArgumentException(
+                            "Loaded student data contains duplicate IDs.");
+                }
+            }
+
+            validatedStudents.add(student);
+        }
+
+        // Replace existing records only after validation succeeds
         students.clear();
-        students.addAll(loadedStudents);
+        students.addAll(validatedStudents);
     }
 
     // Returns all students
@@ -77,8 +111,9 @@ public class StudentRegisterService {
         return false;
     }
 
-    // Displays the total number of students and course-wise counts
+    // Displays total students and course-wise counts
     public int showSummary() {
+
         if (students.isEmpty()) {
             System.out.println("The register is empty.");
             return 0;
@@ -91,6 +126,7 @@ public class StudentRegisterService {
         ArrayList<String> displayedCourses = new ArrayList<>();
 
         for (Student student : students) {
+
             String course = student.getCourse();
             boolean alreadyDisplayed = false;
 
@@ -114,7 +150,8 @@ public class StudentRegisterService {
 
     // Counts students registered in a particular course
     public int countCourse(String course) {
-        if (course == null || course.trim().isEmpty()) {
+
+        if (course == null || course.isBlank()) {
             return 0;
         }
 
@@ -131,7 +168,8 @@ public class StudentRegisterService {
 
     // Finds the index of a student using their ID
     private int findStudentIndex(String id) {
-        if (id == null || id.trim().isEmpty()) {
+
+        if (id == null || id.isBlank()) {
             return -1;
         }
 

@@ -6,17 +6,19 @@ import java.util.Scanner;
 public class Main {
 
     private static final Scanner scanner = new Scanner(System.in);
-    private static final StudentRegisterService service
-            = new StudentRegisterService();
 
-    private static final StudentFileHandler fileHandler
-            = new StudentFileHandler("students.csv");
+    private static final StudentRegisterService service =
+            new StudentRegisterService();
+
+    private static final StudentFileHandler fileHandler =
+            new StudentFileHandler("students.csv");
 
     public static void main(String[] args) {
 
         // Load previously saved records
         try {
             service.loadStudents(fileHandler.loadStudents());
+
             System.out.println("Student records loaded successfully!");
             System.out.println(
                     "Total loaded records: "
@@ -62,10 +64,6 @@ public class Main {
                     System.out.println(
                             "Exiting Student Register. Goodbye!");
                     break;
-
-                default:
-                    System.out.println(
-                            "Invalid choice. Enter a number from 0 to 5.");
             }
 
         } while (choice != 0);
@@ -85,7 +83,6 @@ public class Main {
         System.out.print("Enter your choice: ");
     }
 
-    // Reads the user's menu choice
     // Reads a valid menu choice
     private static int readChoice() {
 
@@ -101,7 +98,7 @@ public class Main {
                 }
 
             } catch (NumberFormatException e) {
-                // Display validation message below
+                // Invalid numeric input
             }
 
             System.out.print(
@@ -122,7 +119,7 @@ public class Main {
         }
     }
 
-    // Reads input and repeatedly asks until a non-empty value is entered
+    // Reads input until a non-empty value is entered
     private static String readRequiredInput(String message) {
 
         while (true) {
@@ -133,12 +130,11 @@ public class Main {
                 return input;
             }
 
-            System.out.println("Input cannot be empty. Please try again.");
+            System.out.println(
+                    "Input cannot be empty. Please try again.");
         }
     }
 
-    // Collects student details and adds a record
-    // Collects student details and adds a record
     // Collects student details and adds a record
     private static void handleAddStudent() {
 
@@ -166,13 +162,15 @@ public class Main {
             } catch (InvalidStudentDataException e) {
                 System.out.println(
                         "Invalid student data: " + e.getMessage());
-                System.out.println("Please enter the student details again.\n");
+                System.out.println(
+                        "Please enter the student details again.\n");
             }
         }
     }
 
     // Displays all registered students
     private static void listStudents() {
+
         ArrayList<Student> students = service.getAllStudents();
 
         if (students.isEmpty()) {
@@ -198,12 +196,9 @@ public class Main {
 
     // Searches for a student using their ID
     private static void handleSearchStudent() {
-        String id = readRequiredInput("Enter student ID to search: ");
 
-        if (id.isEmpty()) {
-            System.out.println("Student ID cannot be empty.");
-            return;
-        }
+        String id = readRequiredInput(
+                "Enter student ID to search: ");
 
         Student student = service.searchStudent(id);
 
@@ -216,14 +211,10 @@ public class Main {
     }
 
     // Deletes a student using their ID
-    // Deletes a student using their ID
     private static void handleDeleteStudent() {
-        String id = readRequiredInput("Enter student ID to delete: ");
 
-        if (id.isEmpty()) {
-            System.out.println("Student ID cannot be empty.");
-            return;
-        }
+        String id = readRequiredInput(
+                "Enter student ID to delete: ");
 
         Student student = service.searchStudent(id);
 
@@ -240,8 +231,10 @@ public class Main {
                 // Restore the record if saving fails
                 try {
                     service.addStudent(student);
+
                     System.out.println(
                             "Deletion cancelled because saving failed.");
+
                 } catch (InvalidStudentDataException e) {
                     System.out.println(
                             "Could not restore student: " + e.getMessage());
@@ -249,5 +242,4 @@ public class Main {
             }
         }
     }
-
 }
