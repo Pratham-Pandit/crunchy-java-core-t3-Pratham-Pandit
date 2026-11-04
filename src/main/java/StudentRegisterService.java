@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class StudentRegisterService {
 
@@ -23,6 +24,12 @@ public class StudentRegisterService {
 
         students.add(student);
         return true;
+    }
+
+    // Loads records into the service
+    public void loadStudents(List<Student> loadedStudents) {
+        students.clear();
+        students.addAll(loadedStudents);
     }
 
     // Returns all students

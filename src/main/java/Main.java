@@ -1,13 +1,36 @@
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
 
     private static final Scanner scanner = new Scanner(System.in);
-    private static final StudentRegisterService service = new StudentRegisterService();
+    private static final StudentRegisterService service
+            = new StudentRegisterService();
+
+    private static final StudentFileHandler fileHandler
+            = new StudentFileHandler("students.csv");
 
     public static void main(String[] args) {
+
+        // Load previously saved records
+        try {
+            service.loadStudents(fileHandler.loadStudents());
+            System.out.println("Student records loaded successfully!");
+            System.out.println(
+                    "Total loaded records: "
+                    + service.getAllStudents().size());
+
+        } catch (IOException e) {
+            System.out.println(
+                    "Error loading student records: " + e.getMessage());
+            System.out.println(
+                    "Application cannot continue to avoid accidental data loss.");
+            scanner.close();
+            return;
+        }
+
         int choice;
 
         do {
@@ -73,8 +96,22 @@ public class Main {
         }
     }
 
-    // Collects student details and delegates creation to the service
+    // Saves the current student list to CSV
+    private static boolean saveRecords() {
+        try {
+            fileHandler.saveStudents(service.getAllStudents());
+            return true;
+
+        } catch (IOException e) {
+            System.out.println(
+                    "Error saving records: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Collects student details and adds a record
     private static void handleAddStudent() {
+
         System.out.print("Enter student ID: ");
         String id = scanner.nextLine().trim();
 
@@ -87,9 +124,19 @@ public class Main {
         Student student = new Student(id, name, course);
 
         if (service.addStudent(student)) {
-            System.out.println("Record added successfully!");
+
+            if (saveRecords()) {
+                System.out.println("Record added successfully!");
+            } else {
+                // Roll back the addition if saving fails
+                service.deleteStudent(id);
+                System.out.println(
+                        "Record was not added because saving failed.");
+            }
+
         } else {
-            System.out.println("Could not add record. Check the details and ensure the ID is unique.");
+            System.out.println(
+                    "Could not add record. Check the details and ensure the ID is unique.");
         }
     }
 
@@ -148,10 +195,23 @@ public class Main {
             return;
         }
 
-        if (service.deleteStudent(id)) {
-            System.out.println("Record deleted successfully!");
-        } else {
+        Student student = service.searchStudent(id);
+
+        if (student == null) {
             System.out.println("No record found with ID: " + id);
+            return;
+        }
+
+        if (service.deleteStudent(id)) {
+
+            if (saveRecords()) {
+                System.out.println("Record deleted successfully!");
+            } else {
+                // Restore the record if saving fails
+                service.addStudent(student);
+                System.out.println(
+                        "Deletion cancelled because saving failed.");
+            }
         }
     }
 }
